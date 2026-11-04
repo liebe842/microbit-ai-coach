@@ -4,12 +4,11 @@
 
 손목에 찬 micro:bit가 머신러닝으로 점핑잭·스쿼트·가만히를 알아보고, 운동한 시간을 재 주는 'AI 운동 코치'를 만들어요. micro:bit CreateAI로 데이터를 모아 학습시키고, MakeCode 블록으로 코딩해요.
 
-| 자료 | 파일 |
+| 자료 | 주소 |
 |---|---|
-| 슬라이드 (40장) | `index.html` |
-| PDF 원고 | `ai-coach.pdf` |
+| 슬라이드 (40장) | https://liebe842.github.io/microbit-ai-coach/ |
+| PDF 원고 | https://liebe842.github.io/microbit-ai-coach/ai-coach.pdf |
 
-- **보는 방법:** 저장소를 내려받아(Code → Download ZIP) 압축을 풀고 `index.html`을 Chrome이나 Edge로 열어요. 글꼴을 불러오려면 인터넷이 연결되어 있어야 해요.
 - **조작키:** ←/→ 또는 클릭으로 넘기기 · `N` 선생님 메모 · `F` 전체 화면 · `P` 인쇄
 - **PDF 받기:** 화면 아래쪽에 마우스를 올리면 나오는 [PDF 다운로드] 버튼
 - **슬라이드 번호로 바로 가기:** 주소 끝에 `#16`처럼 번호를 붙여요
