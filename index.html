@@ -1,0 +1,798 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>머신러닝을 활용하여 AI 운동 코치 만들기</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nanum+Gothic:wght@400;700;800&display=swap">
+<style>
+:root{
+  --board:#17191F;--board2:#262A34;--board3:#323744;
+  --led:#FF3B30;--led-d:#C8261C;--gold:#E8B730;--gold-l:#FFF2CC;--gold-d:#7A5600;
+  --green:#00A000;--green-d:#0A7A1C;--green-l:#E2F4E2;
+  --blue:#2B64C3;--blue-l:#E3ECFA;--pink:#C800C8;
+  --ink:#1E2330;--ink2:#4B5363;--bgA:#F4F6FA;--bgB:#ECF5ED;--line:#DDE3EC;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:#0D0E12;overflow:hidden}
+*{word-break:keep-all}
+img{display:block}
+a{color:var(--blue)}
+#stage{position:absolute;left:50%;top:50%;width:1920px;height:1080px;transform-origin:center center}
+#stage>section{position:absolute;inset:0;width:1920px;height:1080px;overflow:hidden;opacity:0;visibility:hidden;transition:opacity .35s;
+  padding:96px 128px;display:flex;flex-direction:column;gap:40px;background:var(--bgA);color:var(--ink);font-family:'Nanum Gothic',Arial,sans-serif}
+#stage>section.on{opacity:1;visibility:visible}
+#stage>section.b{background:var(--bgB)}
+#stage>section.dark{background:var(--board);color:#EEF1F6}
+section aside{display:none}
+/* 머리글 아래 본문을 세로 가운데로 */
+#stage>section>.hd+*{margin-top:auto}
+#stage>section:not(#wrap):not(#cover)>:nth-last-child(2){margin-bottom:auto}
+/* 내용이 적은 장은 크게 */
+.big .t{font-size:40px}
+.big h3{font-size:54px}
+.big .ts{font-size:31px}
+.big .card{padding:44px 48px;gap:18px}
+.big .hl,.big .gbox{font-size:38px;padding:30px 40px}
+.big td{padding:.6em .8em}
+.big .bar{height:60px;border-radius:30px}
+.big .bar>b{border-radius:30px}
+
+/* 글자 */
+.hd{display:flex;flex-direction:column;gap:10px}
+.kick{font-family:'Jua',Arial,sans-serif;font-size:36px;color:var(--green-d)}
+h1,h2,h3{font-family:'Jua',Arial,sans-serif;font-weight:400}
+h2{font-size:70px;line-height:1.15}
+.dark .kick{color:var(--gold)}
+.dark h2{color:#FFFFFF}
+h3{font-size:46px;line-height:1.2}
+.t{font-size:34px;line-height:1.45}
+.tl{font-size:40px;line-height:1.45}
+.ts{font-size:28px;line-height:1.45;color:var(--ink2)}
+.dark .ts{color:#B9C0CD}
+b.r{color:var(--led-d)} b.g{color:var(--green-d)} b.bl{color:var(--blue)}
+.dark b.r{color:#FF6B61} .dark b.g{color:#6FD36F}
+
+/* 배치 */
+.row{display:flex;flex-direction:row;gap:32px;align-items:stretch}
+.row.c{align-items:center}
+.col{display:flex;flex-direction:column;gap:20px}
+.f1{flex:1;min-width:0}
+.card{background:#FFFFFF;border-radius:32px;padding:34px 40px;display:flex;flex-direction:column;gap:14px;box-shadow:0 8px 28px rgba(23,25,31,.07)}
+.dark .card{background:var(--board2);box-shadow:none}
+.card.ring{outline:6px solid var(--led);outline-offset:-6px}
+.card.gring{outline:6px solid var(--green);outline-offset:-6px}
+.hl{background:var(--gold-l);color:#5E4300;border-radius:28px;padding:24px 36px;font-size:34px;line-height:1.45;font-weight:700}
+.dark .hl{background:#3B3320;color:#FFD877}
+.gbox{background:var(--green-l);color:#0B4A16;border-radius:28px;padding:24px 36px;font-size:34px;line-height:1.45;font-weight:700}
+.chip{font-family:'Jua',Arial,sans-serif;font-size:34px;border-radius:999px;padding:12px 32px;align-self:flex-start}
+.n{display:inline-flex;align-items:center;justify-content:center;width:58px;height:58px;border-radius:50%;background:var(--led);color:#fff;font-family:'Jua',Arial,sans-serif;font-size:32px;flex:none}
+.n.g{background:var(--green)} .n.bl{background:var(--blue)} .n.k{background:var(--board)}
+.step{display:flex;flex-direction:row;gap:20px;align-items:center}
+.arr{flex:none;align-self:center;width:76px;height:42px;background:var(--gold);clip-path:polygon(0 30%,60% 30%,60% 0,100% 50%,60% 100%,60% 70%,0 70%)}
+.arr.dn{width:42px;height:56px;clip-path:polygon(30% 0,70% 0,70% 60%,100% 60%,50% 100%,0 60%,30% 60%)}
+
+/* 그림 */
+.shot{border-radius:24px;border:6px solid #FFFFFF;box-shadow:0 12px 40px rgba(23,25,31,.16);object-fit:contain;background:#FFFFFF}
+.codebox{background:#FFFFFF;border-radius:28px;padding:24px;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 28px rgba(23,25,31,.07)}
+.codebox img{object-fit:contain}
+.cap{font-size:24px;color:var(--ink2);line-height:1.4}
+.dark .cap{color:#AEB5C2}
+
+/* 5x5 LED */
+.led{display:grid;grid-template-columns:repeat(5,1fr);gap:var(--g,8px);width:var(--w,180px);height:var(--w,180px);padding:var(--p,16px);background:var(--board);border-radius:var(--r,22px);flex:none}
+.led i{border-radius:24%;background:#30343F}
+.led i.on{background:var(--led);box-shadow:0 0 calc(var(--w,180px) * .07) rgba(255,59,48,.9)}
+
+/* micro:bit 보드 그림 */
+.mb{position:relative;width:600px;height:500px;background:#22252D;border-radius:44px;flex:none;box-shadow:0 30px 80px rgba(0,0,0,.35)}
+.mb .led{position:absolute;left:50%;top:118px;transform:translateX(-50%);background:transparent;padding:0;--w:250px;--g:18px}
+.mb-logo{position:absolute;left:50%;top:34px;transform:translateX(-50%);width:118px;height:58px;border:10px solid var(--gold);border-radius:30px}
+.mb-logo::before,.mb-logo::after{content:'';position:absolute;top:12px;width:14px;height:14px;border-radius:50%;background:var(--gold)}
+.mb-logo::before{left:20px}.mb-logo::after{right:20px}
+.mb-btn{position:absolute;top:196px;width:86px;height:86px;border-radius:18px;background:#3A3F4C;display:flex;align-items:center;justify-content:center}
+.mb-btn::before{content:'';width:52px;height:52px;border-radius:50%;background:#101114}
+.mb-btn span{position:absolute;top:-46px;font-family:'Jua',Arial,sans-serif;font-size:30px;color:#FFFFFF}
+.mb-btn.a{left:34px}.mb-btn.b{right:34px}
+.mb-pins{position:absolute;left:0;right:0;bottom:0;height:96px;background:var(--gold);border-radius:0 0 44px 44px;display:flex;justify-content:space-around;align-items:center;padding:0 28px}
+.mb-pins i{font-style:normal;width:72px;height:72px;border-radius:50%;background:#F8DC86;border:6px solid #FFF3C9;display:flex;align-items:center;justify-content:center;font-family:'Jua',Arial,sans-serif;font-size:22px;color:#5A4300}
+
+/* 표, 막대 */
+table{border-collapse:separate;border-spacing:0;overflow:hidden;width:100%;background:#FFFFFF;border-radius:24px}
+td,th{padding:.4em .7em}
+th{font-family:'Jua',Arial,sans-serif;font-weight:400;background:var(--gold-l)}
+tr+tr td{border-top:2px solid #E5E7EB}
+.bar{position:relative;height:46px;background:#E4E8EF;border-radius:23px}
+.bar>b{position:absolute;left:0;top:0;bottom:0;border-radius:23px;background:var(--blue)}
+.bar>i{position:absolute;top:-10px;bottom:-10px;width:6px;border-radius:3px;background:var(--led)}
+.chk{display:inline-block;width:44px;height:44px;border:5px solid var(--green);border-radius:10px;flex:none}
+
+/* 아래 도구 막대 */
+#bar{position:fixed;left:0;right:0;bottom:0;display:flex;gap:8px;align-items:center;justify-content:center;padding:10px;font:14px 'Nanum Gothic',sans-serif;color:#ddd;opacity:0;transition:opacity .3s}
+body:hover #bar{opacity:1}
+#bar button,#bar a{background:#333;color:#eee;border:0;border-radius:8px;padding:6px 12px;font:inherit;cursor:pointer;text-decoration:none}
+#bar a.pdf{background:#C8261C;color:#fff;font-weight:700}
+#notes{position:fixed;left:16px;right:16px;bottom:56px;max-height:35vh;overflow:auto;background:rgba(255,255,255,.96);color:#263046;border-radius:12px;padding:16px 20px;font:18px/1.6 'Nanum Gothic',sans-serif;display:none;box-shadow:0 8px 30px rgba(0,0,0,.4)}
+body.notes #notes{display:block}
+@media print{
+  html,body{overflow:visible;background:#fff;height:auto}
+  #bar,#notes{display:none}
+  #stage{position:static;transform:none!important;width:1920px;height:auto}
+  #stage>section{position:relative;opacity:1;visibility:visible;transition:none;break-after:page;page-break-after:always;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  #stage>section:last-child{break-after:auto;page-break-after:auto}
+  @page{size:1920px 1080px;margin:0}
+}
+</style>
+</head>
+<body>
+<div id="stage">
+
+<!-- 1 표지 -->
+<section id="cover" class="dark" style="padding:88px 128px;gap:56px">
+<p class="chip" style="background:#2E2A1C;color:var(--gold);font-size:38px;padding:14px 36px">2026학년도 결빛 네트워크 연계 구산 「CODE_Boost」 주말 코딩 캠프</p>
+<div class="row c" style="gap:72px;flex:1">
+<div class="col f1" style="gap:36px">
+<div class="col" style="gap:14px">
+<p style="font-family:'Jua',Arial,sans-serif;font-size:58px;line-height:1.2;color:#C9D0DC"><span style="color:var(--gold)">머신러닝</span>을 활용하여</p>
+<h1 style="font-size:128px;line-height:1.1;color:#FFFFFF"><span style="color:var(--led);text-shadow:0 0 28px rgba(255,59,48,.6)">AI</span> 운동 코치<br>만들기</h1>
+</div>
+<p style="font-size:42px;line-height:1.45;color:#C9D0DC">마이크로비트 AI가 내 운동을 알아보고<br>운동한 시간을 재 줘요</p>
+<p style="font-family:'Jua',Arial,sans-serif;font-size:38px;color:var(--gold)">강사 · 부내초 교사 유경윤</p>
+</div>
+<div class="mb"><div class="mb-logo"></div><div class="mb-btn a"><span>A</span></div><div class="mb-btn b"><span>B</span></div><div class="led" data-p="10101 01110 00100 01010 10001"></div><div class="mb-pins"><i>0</i><i>1</i><i>2</i><i>3V</i><i>GND</i></div></div>
+</div>
+<aside>오늘은 마이크로비트에 인공지능(머신러닝)을 넣어서, 손목에 찬 마이크로비트가 점핑잭·스쿼트·가만히 있기를 스스로 알아보고 운동 시간을 재는 'AI 운동 코치'를 만들어요. 앞선 차시의 '놀다 보면 운동 되는 운동보조기구(흔들림 횟수 세기)'를 AI로 한 단계 업그레이드하는 수업이에요. 이 수업은 micro:bit 교육 재단의 공식 프로젝트 'AI 활동 타이머'(CC BY-SA 4.0)를 우리 캠프에 맞게 다시 구성했어요. 오른쪽 그림의 LED는 오늘 만들 '점핑잭' 그림이에요.</aside>
+</section>
+
+<!-- 2 오늘 배울 것 -->
+<section id="today" class="big">
+<div class="hd"><p class="kick">오늘 배울 것</p><h2>AI에게 운동을 가르쳐요</h2></div>
+<div class="row c" style="gap:24px">
+<div class="card f1" style="align-items:center;text-align:center;padding:40px 28px">
+<span class="n g">1</span><h3 style="color:var(--green-d)">데이터 모으기</h3><p class="t">동작을 하면서<br>예시를 기록해요</p><p class="ts">micro:bit CreateAI</p>
+</div>
+<div class="arr"></div>
+<div class="card f1" style="align-items:center;text-align:center;padding:40px 28px">
+<span class="n bl">2</span><h3 style="color:var(--blue)">AI 학습·테스트</h3><p class="t">AI가 예시에서<br>규칙을 찾아요</p><p class="ts">micro:bit CreateAI</p>
+</div>
+<div class="arr"></div>
+<div class="card f1" style="align-items:center;text-align:center;padding:40px 28px">
+<span class="n">3</span><h3 style="color:var(--led-d)">블록 코딩</h3><p class="t">AI가 알아본 동작으로<br>프로그램을 만들어요</p><p class="ts">Microsoft MakeCode</p>
+</div>
+</div>
+<div class="hl">완성하면? 손목의 micro:bit가 <u>점핑잭·스쿼트·가만히</u>를 알아보고, 운동한 시간을 재 줘요!</div>
+<aside>오늘 수업의 큰 그림이에요. 1·2단계는 CreateAI 웹사이트에서, 3단계는 MakeCode에서 해요. 두 사이트는 이어져 있어서 CreateAI에서 버튼 하나로 MakeCode로 넘어갈 수 있어요. 단계마다 확인하고 넘어가니 중간에 멈춰도 괜찮아요.</aside>
+</section>
+
+<!-- 3 지난 시간 -->
+<section id="recall" class="b">
+<div class="hd"><p class="kick">지난 시간 떠올리기 · 운동보조기구</p><h2>“온몸을 흔들어 주세요!” 기억나나요?</h2></div>
+<div class="row c" style="gap:48px">
+<div class="codebox" style="width:860px;height:560px"><img src="img/code-shake.png" alt="흔들림 감지될 때 횟수 값 1 증가, A 버튼을 누르면 횟수를 숫자로 출력, B 버튼을 누르면 횟수에 0 저장" style="width:800px;height:500px"></div>
+<div class="col f1" style="gap:24px">
+<div class="card"><p class="t"><span class="n" style="width:46px;height:46px;font-size:26px;margin-right:12px">1</span>흔들리면 <b>횟수 +1</b></p></div>
+<div class="card"><p class="t"><span class="n" style="width:46px;height:46px;font-size:26px;margin-right:12px">2</span>A 버튼 → <b>횟수 확인</b></p></div>
+<div class="card"><p class="t"><span class="n" style="width:46px;height:46px;font-size:26px;margin-right:12px">3</span>B 버튼 → <b>0으로 초기화</b></p></div>
+<p class="ts">가속도 센서의 <b>흔들림 감지</b> 블록을 썼어요</p>
+</div>
+</div>
+<aside>앞선 차시(02 놀다 보면 운동 되는 운동보조기구)의 첫 활동 코드예요. 학생들에게 “이 코드는 무엇을 셌나요?”라고 물어보세요. 흔들린 횟수를 셌다는 답이 나오면, 이 코드는 사람이 정한 규칙(흔들리면 1 더하기)으로 움직인다는 점을 짚어 주세요. 다음 장에서 이 규칙의 한계를 찾아봐요.</aside>
+</section>
+
+<!-- 4 생각해 보기 -->
+<section id="think">
+<div class="hd"><p class="kick">생각해 보기</p><h2>점핑잭과 스쿼트를 구분할 수 있을까요?</h2></div>
+<div class="row" style="gap:40px">
+<div class="card f1 row c" style="gap:36px;flex-direction:row">
+<div class="led" data-p="10101 01110 00100 01010 10001" style="--w:220px"></div>
+<div class="col"><h3>점핑잭</h3><p class="t">micro:bit가 흔들려요<br>→ <b class="r">횟수 +1</b></p></div>
+</div>
+<div class="card f1 row c" style="gap:36px;flex-direction:row">
+<div class="led" data-p="00100 11111 00100 01110 01010" style="--w:220px"></div>
+<div class="col"><h3>스쿼트</h3><p class="t">micro:bit가 흔들려요<br>→ <b class="r">횟수 +1</b></p></div>
+</div>
+</div>
+<div class="hl">흔들림 감지 블록은 “흔들렸다 / 안 흔들렸다”만 알아요.<br>어떤 운동을 했는지는 알 수 없어요!</div>
+<p class="t">그렇다면 “점핑잭이면 이렇게, 스쿼트면 저렇게”라는 규칙을 <b>사람이 직접</b> 만들 수 있을까요?</p>
+<aside>학생들에게 규칙을 직접 만들어 보라고 해 보세요. “팔이 위로 크게 움직이면 점핑잭” 같은 말은 쉽지만, 가속도 센서 숫자로 정확한 규칙을 만들기는 매우 어려워요. 사람마다 키, 팔 길이, 속도가 다르기 때문이에요. 이 어려움이 오늘 AI(머신러닝)가 필요한 이유예요.</aside>
+</section>
+
+<!-- 5 오늘의 아이디어 -->
+<section id="idea" class="dark big">
+<div class="hd"><p class="kick">오늘의 아이디어</p><h2>규칙 대신 예시를 보여 줘요</h2></div>
+<div class="row" style="gap:40px">
+<div class="card f1" style="gap:20px">
+<p class="chip" style="background:#3A3F4C;color:#FFFFFF">지난 시간 · 규칙 프로그래밍</p>
+<p class="tl" style="color:#FFFFFF">사람이 규칙을 <b class="r">직접</b> 만들어요</p>
+<p class="t" style="color:#C9D0DC">“만약 흔들리면 → 횟수 +1”</p>
+</div>
+<div class="card f1" style="gap:20px;outline:6px solid var(--green);outline-offset:-6px">
+<p class="chip" style="background:var(--green);color:#FFFFFF">오늘 · 머신러닝(기계 학습)</p>
+<p class="tl" style="color:#FFFFFF">예시를 많이 보여 주면<br>컴퓨터가 규칙을 <b class="g">스스로</b> 찾아요</p>
+<p class="t" style="color:#C9D0DC">“이런 움직임은 점핑잭이야” × 여러 번</p>
+</div>
+</div>
+<p class="tl" style="color:#E3E7EE"><b style="color:var(--gold)">머신러닝</b>은 컴퓨터가 <b style="color:var(--gold)">데이터</b>를 보고 배워서 판단하는 인공지능(AI)이에요.</p>
+<aside>오늘 수업의 핵심 개념이에요. 규칙 프로그래밍은 사람이 '어떻게'를 다 정해 주고, 머신러닝은 '정답이 붙은 예시(데이터)'를 주면 컴퓨터가 규칙을 찾아요. 이렇게 찾은 규칙 묶음을 '모델'이라고 불러요. 오늘 만들 작품은 두 가지를 함께 써요. 동작 알아보기는 머신러닝이, 시간 재기와 버튼은 우리가 만드는 블록 코드(규칙)가 맡아요.</aside>
+</section>
+
+<!-- 6 생활 속 머신러닝 -->
+<section id="life" class="big">
+<div class="hd"><p class="kick">우리 주변의 AI</p><h2>예시를 보고 배운 기계들</h2></div>
+<div class="row" style="gap:32px">
+<div class="card f1" style="align-items:center;text-align:center;gap:20px">
+<div class="led" data-p="01110 10101 10111 10001 01110"></div>
+<h3>스마트워치</h3><p class="t">걷기·달리기·수영을<br>스스로 알아보고 기록해요</p>
+</div>
+<div class="card f1" style="align-items:center;text-align:center;gap:20px">
+<div class="led" data-p="00000 01010 00000 10001 01110"></div>
+<h3>사진 앱</h3><p class="t">같은 사람의 얼굴끼리<br>모아서 정리해요</p>
+</div>
+<div class="card f1" style="align-items:center;text-align:center;gap:20px">
+<div class="led" data-p="00110 00101 00100 11100 11100"></div>
+<h3>음성 비서</h3><p class="t">내 목소리를 듣고<br>무슨 말인지 알아들어요</p>
+</div>
+</div>
+<div class="gbox">모두 아주 많은 예시(데이터)를 보고 배웠어요. 오늘 우리 micro:bit는 스마트워치처럼 운동을 알아볼 거예요!</div>
+<aside>학생들이 경험해 본 기기를 먼저 말하게 해 보세요. 스마트워치나 스마트폰의 운동 앱은 손목의 가속도 센서 데이터로 운동 종류를 알아보는데, 오늘 만들 작품과 원리가 같아요. micro:bit에도 같은 가속도 센서가 들어 있다는 점(01 센서 이해 차시)을 연결해 주세요.</aside>
+</section>
+
+<!-- 7 몸으로 퀴즈 -->
+<section id="unplug" class="b big">
+<div class="hd"><p class="kick">모둠 활동 · 컴퓨터 없이</p><h2>몸으로 하는 동작 맞히기 게임</h2></div>
+<div class="row" style="gap:28px">
+<div class="card f1"><span class="n">1</span><h3>예시 보여 주기</h3><p class="t">술래 앞에서 친구가<br>동작 3가지를 이름과<br>함께 <b>3번씩</b> 보여 줘요</p></div>
+<div class="card f1"><span class="n">2</span><h3>맞히기</h3><p class="t">이름 없이 동작만<br>보여 주면 술래가<br>무슨 동작인지 맞혀요</p></div>
+<div class="card f1"><span class="n">3</span><h3>헷갈리게 하기</h3><p class="t">동작을 아주 작게,<br>또는 비슷하게 하면?<br>처음 보는 동작이면?</p></div>
+</div>
+<div class="hl">술래가 한 일 = <u>예시 보기 → 규칙 찾기 → 맞히기</u>. AI도 똑같은 순서로 배워요!</div>
+<aside>5분 정도의 몸풀기 활동이에요. 동작 3가지는 모둠이 자유롭게 정해도 되고, 오늘 쓸 점핑잭·스쿼트·가만히로 해도 좋아요. 3번에서 술래가 틀리는 경우가 나오면 좋은 발견이에요. “예시를 더 많이, 더 다양하게 보여 주면 어떨까?”라고 물으면 뒤에 나올 '데이터 더 모으기'와 이어져요. 처음 보는 동작은 술래도 맞힐 수 없다는 점도 AI의 한계로 이어 주세요.</aside>
+</section>
+
+<!-- 8 오늘 만들 작품 -->
+<section id="project">
+<div class="hd"><p class="kick">오늘 만들 작품</p><h2>AI 운동 코치</h2></div>
+<div class="row c" style="gap:64px">
+<div class="mb" style="transform:scale(.86);transform-origin:left center;margin-right:-84px"><div class="mb-logo"></div><div class="mb-btn a"><span>A</span></div><div class="mb-btn b"><span>B</span></div><div class="led" data-p="00100 11111 00100 01110 01010"></div><div class="mb-pins"><i>0</i><i>1</i><i>2</i><i>3V</i><i>GND</i></div></div>
+<div class="col f1" style="gap:22px">
+<div class="card step" style="flex-direction:row;padding:26px 34px"><span class="n g">1</span><p class="t"><b>어떤 운동인지 알아봐요</b><br>동작마다 다른 LED 그림이 나와요</p></div>
+<div class="card step" style="flex-direction:row;padding:26px 34px"><span class="n bl">2</span><p class="t"><b>운동한 시간을 재요</b><br>A 버튼은 점핑잭, B 버튼은 스쿼트 시간</p></div>
+<div class="card step" style="flex-direction:row;padding:26px 34px"><span class="n">3</span><p class="t"><b>목표를 채우면 축하해요</b><br>점핑잭 30초를 채우면 하트와 소리!</p></div>
+<p class="chip" style="background:#E5F4E5;color:#0A6B18;font-size:30px">SDGs 3 · 건강과 웰빙</p>
+</div>
+</div>
+<aside>완성 작품의 모습을 먼저 보여 주고 시작해요. 그림의 LED는 '스쿼트'를 알아봤을 때의 모습이에요. 이 작품은 micro:bit 공식 프로젝트 'AI 활동 타이머'(걷기·점프·가만히의 시간을 재는 작품)와 구조가 같아요. 우리는 동작을 점핑잭·스쿼트·가만히로 바꾸고, 목표 달성 축하 기능을 더했어요. 마지막 프로젝트 차시(SDGs 실천 작품)와 이어지도록 '건강과 웰빙' 목표를 함께 소개해 주세요.</aside>
+</section>
+
+<!-- 9 준비물 -->
+<section id="prep" class="b">
+<div class="hd"><p class="kick">준비물</p><h2>이것만 있으면 시작할 수 있어요</h2></div>
+<div class="row" style="gap:28px">
+<div class="card f1 ring"><h3 style="color:var(--led-d)">micro:bit V2</h3><p class="t">AI 모델을 micro:bit에서<br>돌리려면 <b>꼭 V2</b>!</p><p class="ts">앞면에 금색 <b>터치 로고</b>와<br><b>마이크 LED</b>가 있으면 V2</p></div>
+<div class="card f1"><h3>배터리 · 밴드</h3><p class="t">AAA 건전지 2개와<br>배터리 팩</p><p class="ts">손목에 고정할 밴드<br>(고무줄, 벨크로도 OK)</p></div>
+<div class="card f1"><h3>컴퓨터</h3><p class="t">USB 데이터 케이블<br>Chrome 또는 Edge</p><p class="ts">인터넷이 연결된<br>노트북·데스크톱·크롬북</p></div>
+<div class="card f1"><h3>블루투스가 없다면</h3><p class="t">micro:bit V2를<br><b>1대 더</b> 준비해요</p><p class="ts">USB로 꽂은 micro:bit가<br>라디오로 데이터를 받아요</p></div>
+</div>
+<div class="hl">V1으로도 데이터 모으기와 학습은 할 수 있지만, 완성한 AI를 micro:bit에 넣을 수는 없어요.</div>
+<aside>공식 안내 기준 준비물이에요. 수업 전에 모둠별 micro:bit가 V2인지 꼭 확인해 주세요(01 차시 '앞면'에서 NEW로 소개한 터치 로고와 마이크 LED). 컴퓨터의 블루투스 사용 여부도 미리 확인하세요. 블루투스가 없으면 데이터 수집용 micro:bit와 USB에 꽂아 둘 라디오 연결용 micro:bit, 이렇게 2대가 필요해요. USB 케이블은 충전 전용이 아닌 데이터 케이블이어야 해요.</aside>
+</section>
+
+<!-- 10 CreateAI 소개 -->
+<section id="createai">
+<div class="hd"><p class="kick">micro:bit CreateAI</p><h2>AI를 만드는 5단계</h2></div>
+<div class="row c" style="gap:48px">
+<img class="shot" src="img/createai-how.jpg" alt="CreateAI 작동 방식 화면: 연결하기, 데이터 수집, 모델 테스트, 코드, 사용 단계와 손목의 micro:bit가 노트북으로 데이터를 보내는 그림" style="width:960px;height:641px">
+<div class="col f1" style="gap:18px">
+<div class="step"><span class="n k">1</span><p class="t"><b>연결하기</b> micro:bit 연결</p></div>
+<div class="step"><span class="n g">2</span><p class="t"><b>데이터 수집</b> 동작 예시 기록</p></div>
+<div class="step"><span class="n bl">3</span><p class="t"><b>모델 테스트</b> 학습하고 시험</p></div>
+<div class="step"><span class="n">4</span><p class="t"><b>코드</b> MakeCode 블록</p></div>
+<div class="step"><span class="n" style="background:var(--gold);color:#3A2A00">5</span><p class="t"><b>사용</b> 손목에 차고 운동!</p></div>
+<div class="card" style="padding:22px 28px;margin-top:8px"><p class="t" style="font-weight:800">createai.microbit.org</p><p class="ts">무료 · 화면이 한국어로 나와요</p></div>
+</div>
+</div>
+<aside>CreateAI는 micro:bit 교육 재단이 만든 무료 웹 도구예요. 새 프로젝트를 열면 이 '작동 방식' 안내가 나와요. 화면 위쪽의 다섯 단계가 오늘 수업 순서와 같아요. 만든 프로젝트는 그 컴퓨터의 브라우저에 저장돼요. 브라우저의 사이트 데이터를 지우면 함께 지워지니, 수업이 끝나면 [저장하기]로 파일을 받아 두게 하세요.</aside>
+</section>
+
+<!-- 11 동작 정하기 -->
+<section id="actions" class="b big">
+<div class="hd"><p class="kick">1단계 · 동작 정하기</p><h2>AI에게 가르칠 동작 3가지</h2></div>
+<div class="row" style="gap:32px">
+<div class="card f1" style="align-items:center;text-align:center;gap:18px">
+<div class="led" data-p="10101 01110 00100 01010 10001" style="--w:200px"></div>
+<h3 style="color:var(--led-d)">점핑잭</h3><p class="t">팔다리를 크게 벌렸다가<br>모아요</p>
+</div>
+<div class="card f1" style="align-items:center;text-align:center;gap:18px">
+<div class="led" data-p="00100 11111 00100 01110 01010" style="--w:200px"></div>
+<h3 style="color:var(--blue)">스쿼트</h3><p class="t">팔을 앞으로 뻗고<br>앉았다 일어나요</p>
+</div>
+<div class="card f1" style="align-items:center;text-align:center;gap:18px">
+<div class="led" data-p="00000 11011 00000 01110 00000" style="--w:200px"></div>
+<h3 style="color:var(--green-d)">가만히</h3><p class="t">편하게 서 있거나<br>앉아 있어요</p>
+</div>
+</div>
+<div class="hl">왜 “가만히”도 가르칠까요? 운동을 <u>안 할 때</u>도 알아야 운동한 시간을 정확히 잴 수 있어요!</div>
+<aside>동작은 서로 확실히 다를수록 AI가 잘 구분해요. 점핑잭은 팔이 위아래로 크게, 스쿼트는 팔을 앞으로 뻗은 채 몸 전체가 위아래로 움직여요. '가만히'는 운동이 끝났다는 것을 알려 주는 중요한 동작이에요. 뒤에서 만들 시간 재기는 한 동작이 끝나고 다른 동작으로 바뀔 때 시간을 더하기 때문에, 가만히가 없으면 시간을 제대로 잴 수 없어요.</aside>
+</section>
+
+<!-- 12 착용하기 -->
+<section id="wear">
+<div class="hd"><p class="kick">1단계 · 착용하기</p><h2>늘 같은 자리, 같은 방향으로!</h2></div>
+<div class="row" style="gap:32px">
+<div class="card f1"><h3>① 같은 자리</h3><p class="t">모든 데이터를 <b>같은 손목</b>에<br>차고 모아요</p><p class="ts">한 번은 손목, 한 번은 손에 쥐면<br>AI가 헷갈려요</p></div>
+<div class="card f1"><h3>② 같은 방향</h3><p class="t">LED 화면과 USB 꽂는 곳의<br>방향을 <b>정해 두고</b> 지켜요</p><p class="ts">방향이 바뀌면 숫자(데이터)가<br>완전히 달라져요</p></div>
+</div>
+<div class="card" style="background:#FFFFFF;gap:18px">
+<p class="kick" style="font-size:34px">우리 반 약속 정하기</p>
+<p class="tl"><b>________</b> 손목에, LED 화면이 <b>________</b>을(를) 보게 차요</p>
+</div>
+<div class="hl">차는 방법을 바꾸고 싶다면? 지금까지 모은 데이터를 모두 다시 모아야 해요.</div>
+<aside>공식 안내에서 가장 강조하는 부분이에요. 한 프로젝트의 모든 샘플은 같은 신체 부위, 같은 방향으로 착용해서 모아야 해요. 착용 방법을 바꾸면 모든 데이터 샘플을 바꿔야 해요. 반 전체가 같은 약속(예: 왼쪽 손목, LED가 바깥쪽)을 정하면 나중에 친구 데이터를 서로 섞어 쓸 수 있어 좋아요. 배터리 팩 선이 움직이지 않도록 밴드로 함께 고정해 주세요.</aside>
+</section>
+
+<!-- 13 새 프로젝트, 연결 준비 -->
+<section id="connect1" class="b">
+<div class="hd"><p class="kick">2단계 · 연결하기</p><h2>새 프로젝트를 만들고 micro:bit를 연결해요</h2></div>
+<div class="row c" style="gap:48px">
+<div class="col f1" style="gap:20px">
+<div class="step"><span class="n">1</span><p class="t">Chrome에서 <b>createai.microbit.org</b></p></div>
+<div class="step"><span class="n">2</span><p class="t"><b>[새 프로젝트]</b> → 이름 “AI 운동 코치”</p></div>
+<div class="step"><span class="n">3</span><p class="t"><b>[연결하기]</b>를 누르고 준비물 확인</p></div>
+<div class="step"><span class="n">4</span><p class="t">화면 안내를 <b>한 단계씩</b> 따라가요</p></div>
+<p class="ts" style="margin-top:6px">블루투스가 없으면 아래쪽<br>“대신 micro:bit 라디오를 사용하여 연결하기”</p>
+</div>
+<img class="shot" src="img/createai-connect-1.jpg" alt="Web Bluetooth로 연결할 수 있는 것: micro:bit 1대, 컴퓨터, 마이크로 USB 케이블, 배터리 홀더" style="width:900px;height:601px">
+</div>
+<aside>[연결하기]를 누르면 연결 안내가 시작돼요. 첫 화면은 준비물 확인이에요. 컴퓨터에 블루투스가 없으면 화면 왼쪽 아래의 '대신 micro:bit 라디오를 사용하여 연결하기'를 눌러 라디오 연결 안내를 따라가요. 연결 과정에서 브라우저가 장치 연결 허락을 묻는 창이 나오면 해당 micro:bit를 골라 연결해요. 처음에는 선생님 화면으로 함께 따라 해 보세요.</aside>
+</section>
+
+<!-- 14 USB 연결 -->
+<section id="connect2">
+<div class="hd"><p class="kick">2단계 · 연결하기</p><h2>데이터 수집 프로그램을 넣어요</h2></div>
+<div class="row c" style="gap:48px">
+<img class="shot" src="img/createai-connect-2.jpg" alt="USB 케이블을 micro:bit에 연결하기 안내 화면" style="width:900px;height:601px">
+<div class="col f1" style="gap:22px">
+<div class="card" style="padding:26px 32px"><p class="t"><b>USB 케이블</b>로 micro:bit와<br>컴퓨터를 연결해요</p></div>
+<div class="card" style="padding:26px 32px"><p class="t">[다음]을 누르면 micro:bit에<br><b>데이터 수집 프로그램</b>이 들어가요</p></div>
+<div class="card" style="padding:26px 32px"><p class="t">그다음 <b>배터리 팩</b>을 끼우고<br>안내대로 무선 연결을 마쳐요</p></div>
+<p class="ts">프로그램이 이미 들어 있다면 [건너뛰기]</p>
+</div>
+</div>
+<aside>데이터 수집 프로그램은 micro:bit의 가속도 센서 값을 컴퓨터로 보내 주는 프로그램이에요. 한 번 넣어 두면 다음에는 건너뛸 수 있어요. 연결이 끝나면 화면 아래 '실시간 데이터 그래프'에 micro:bit를 흔들 때마다 선이 출렁여요. 그래프가 움직이는지 확인한 뒤 다음 단계로 가요.</aside>
+</section>
+
+<!-- 15 동작 이름 넣기 -->
+<section id="addaction" class="b">
+<div class="hd"><p class="kick">2단계 · 데이터 모으기</p><h2>동작 이름을 넣어요</h2></div>
+<div class="row c" style="gap:48px">
+<img class="shot" src="img/createai-add-action.jpg" alt="행동 이름 칸에 점핑잭을 넣은 화면. 녹화시작 버튼 아래에 3개 이상 필요라고 나와요" style="width:900px;height:601px">
+<div class="col f1" style="gap:20px">
+<div class="step"><span class="n g">1</span><p class="t"><b>[+ 행동 추가]</b>를 눌러요</p></div>
+<div class="step"><span class="n g">2</span><p class="t">이름 칸에 <b>점핑잭</b></p></div>
+<div class="step"><span class="n g">3</span><p class="t">▼를 눌러 <b>LED 그림</b> 고르기</p></div>
+<div class="step"><span class="n g">4</span><p class="t"><b>스쿼트, 가만히</b>도 똑같이</p></div>
+<div class="hl" style="margin-top:10px">“3개 이상 필요”<br>동작마다 예시가 3개 이상 있어야 해요</div>
+</div>
+</div>
+<aside>왼쪽 화면은 실제 CreateAI에서 '점핑잭' 행동을 추가한 모습이에요(위쪽 두 줄은 공식 예제 프로젝트의 행동이라 무시해도 돼요). 이름에 띄어쓰기나 특수문자는 피하고 짧게 쓰게 해 주세요. 이 이름이 나중에 MakeCode 블록에 그대로 나와요. LED 그림은 CreateAI가 MakeCode 코드를 만들 때 쓰여요.</aside>
+</section>
+
+<!-- 16 녹화하기 -->
+<section id="record">
+<div class="hd"><p class="kick">2단계 · 데이터 모으기</p><h2>녹화시작을 누르고 동작해요</h2></div>
+<div class="row" style="gap:32px">
+<div class="card f1" style="gap:20px">
+<h3>이렇게 기록해요</h3>
+<div class="step"><span class="n">1</span><p class="t">기록할 <b>동작</b>을 골라요</p></div>
+<div class="step"><span class="n">2</span><p class="t"><span style="display:inline-block;background:var(--led-d);color:#fff;border-radius:999px;padding:4px 22px;font-weight:800">녹화시작</span> 또는 micro:bit <b>B 버튼</b></p></div>
+<div class="step"><span class="n">3</span><p class="t">신호에 맞춰 <b>동작을 해요</b></p></div>
+<div class="step"><span class="n">4</span><p class="t">샘플(예시) <b>1개</b>가 생겨요</p></div>
+</div>
+<div class="card f1" style="gap:20px">
+<h3>모둠 역할</h3>
+<p class="t"><b class="r">운동 선수</b> micro:bit를 차고 동작</p>
+<p class="t"><b class="bl">기록 담당</b> 동작 고르고 녹화</p>
+<p class="t"><b class="g">관찰 담당</b> 동작이 맞는지 확인</p>
+<p class="ts">동작마다 역할을 바꿔요</p>
+</div>
+</div>
+<div class="hl">목표: 동작마다 샘플 <u>10개</u> 이상! 많을수록 AI가 더 잘 배워요.</div>
+<aside>녹화는 짧은 시간 동안만 기록돼요. 녹화가 시작되면 바로 동작을 하고, 녹화 중에는 다른 동작을 섞지 않게 해 주세요. 최소 기준은 3개지만, 대부분의 모델은 데이터가 많을수록 좋아져요. 공식 안내처럼 micro:bit의 B 버튼으로도 녹화를 시작할 수 있어서 혼자서도 기록할 수 있어요. 실수한 샘플은 오른쪽 위 ×로 지워요.</aside>
+</section>
+
+<!-- 17 그래프 읽기 -->
+<section id="graph" class="b">
+<div class="hd"><p class="kick">데이터 읽기</p><h2>그래프로 보면 동작이 달라 보여요</h2></div>
+<div class="row c" style="gap:44px">
+<div class="col" style="gap:10px">
+<img class="shot" src="img/createai-data.jpg" alt="CreateAI 데이터 샘플 화면 예시. 걷기와 점프는 선이 출렁이고, 가만히 있기는 선이 평평해요" style="width:960px;height:641px">
+<p class="cap">화면 예시: 공식 예제 ‘AI 활동 타이머’의 데이터(걷기 · 점프 · 가만히)</p>
+</div>
+<div class="col f1" style="gap:22px">
+<div class="card" style="padding:26px 32px"><p class="t">빨강·초록·파랑 선 = micro:bit가 느낀 <b>세 방향(x, y, z)</b>의 움직임</p></div>
+<div class="card" style="padding:26px 32px"><p class="t"><b>가만히</b> → 선이 평평해요</p></div>
+<div class="card" style="padding:26px 32px"><p class="t"><b>움직이면</b> → 선이 출렁출렁</p></div>
+<div class="gbox">같은 동작끼리는 비슷하고,<br>다른 동작과는 달라 보이나요?</div>
+</div>
+</div>
+<aside>01 차시에서 배운 가속도 센서의 x, y, z 세 축을 떠올려 주세요. 그래프 한 칸이 샘플 1개예요. 공식 안내의 질문을 그대로 해 보세요. “모든 걷기 샘플이 비슷해 보이나요? 점프 샘플이 걷기, 가만히 샘플과 달라 보이나요?” 학생들의 점핑잭과 스쿼트 그래프도 서로 다른 모양이 나와야 AI가 잘 구분해요.</aside>
+</section>
+
+<!-- 18 좋은 데이터 -->
+<section id="gooddata" class="big">
+<div class="hd"><p class="kick">데이터 다듬기</p><h2>좋은 데이터, 나쁜 데이터</h2></div>
+<div class="row" style="gap:40px">
+<div class="card f1 gring" style="gap:18px"><h3 style="color:var(--green-d)">좋은 데이터</h3>
+<p class="t">✔ 같은 동작끼리 모양이 비슷해요</p>
+<p class="t">✔ 동작마다 모양이 확실히 달라요</p>
+<p class="t">✔ 여러 친구의 데이터가 섞여 있어요</p>
+<p class="t">✔ 가만히에도 작은 움직임이 있어요</p>
+</div>
+<div class="card f1 ring" style="gap:18px"><h3 style="color:var(--led-d)">나쁜 데이터</h3>
+<p class="t">✘ 녹화 중에 동작을 멈추거나 바꿨어요</p>
+<p class="t">✘ 차는 방향이 중간에 바뀌었어요</p>
+<p class="t">✘ 동작마다 샘플이 너무 적어요</p>
+<p class="t">✘ 혼자 튀는 이상한 그래프가 있어요</p>
+</div>
+</div>
+<div class="hl">이상한 샘플은 오른쪽 위 ×를 눌러 지워요. 데이터를 다듬는 것도 AI 만들기의 중요한 일이에요!</div>
+<aside>공식 안내의 개선 방법을 정리했어요. 같은 행동의 다른 샘플과 완전히 달라 보이는 샘플은 지워서 데이터 세트를 정리할 수 있어요. 자신과 다른 사람의 샘플을 더하면 모델이 좋아져요. '가만히'에 아주 작은 움직임(숨쉬기, 몸 흔들기)을 포함하면 운동 동작과 더 잘 구분해요.</aside>
+</section>
+
+<!-- 19 모델 훈련 -->
+<section id="train" class="dark">
+<div class="hd"><p class="kick">3단계 · AI 학습</p><h2>[모델 훈련]을 눌러요</h2></div>
+<div class="row c" style="gap:56px">
+<div class="col" style="gap:14px">
+<img class="shot" src="img/createai-train-dialog.png" alt="모델 훈련 중 안내: 컴퓨터 프로그램은 데이터 샘플의 패턴이나 차이점을 발견하고 이를 사용하여 다른 동작을 인식할 수 있는 수학적 모델을 구축합니다" style="width:1000px;height:387px;border-color:#2E323C">
+<p class="cap">CreateAI의 실제 안내 화면</p>
+</div>
+<div class="col f1" style="gap:22px">
+<div class="card" style="padding:28px 32px"><p class="t" style="color:#FFFFFF">AI가 데이터에서<br><b style="color:var(--gold)">패턴과 차이점</b>을 찾아요</p></div>
+<div class="card" style="padding:28px 32px"><p class="t" style="color:#FFFFFF">찾아낸 규칙 묶음을<br><b style="color:var(--gold)">모델</b>이라고 해요</p></div>
+</div>
+</div>
+<div class="hl">몸으로 퀴즈에서 술래가 동작을 보고 규칙을 찾은 것과 같아요!</div>
+<aside>데이터 샘플 화면 오른쪽 아래 [모델 훈련]을 누르면 이 안내가 나오고 [훈련 시작]으로 학습해요. 학습은 몇 초면 끝나요. 앞의 몸으로 퀴즈 활동과 연결해, 술래의 머릿속에 생긴 '구분하는 방법'이 모델이라고 설명하면 이해가 쉬워요.</aside>
+</section>
+
+<!-- 20 테스트 -->
+<section id="test">
+<div class="hd"><p class="kick">3단계 · 테스트</p><h2>AI가 잘 맞히는지 시험해요</h2></div>
+<div class="row c" style="gap:44px">
+<img class="shot" src="img/createai-test.jpg" alt="모델 테스트 화면: 행동마다 확실성 퍼센트 막대와 인식 포인트 조절 막대가 있고, 오른쪽 아래에 MakeCode에서 편집하기 버튼이 있어요" style="width:960px;height:641px">
+<div class="col f1" style="gap:20px">
+<div class="card" style="padding:24px 30px"><p class="t"><b class="bl">확실성 %</b><br>AI가 얼마나 확신하는지</p></div>
+<div class="card" style="padding:24px 30px"><p class="t"><b class="r">인식 포인트</b><br>이 선을 넘어야 그 동작으로 판단</p></div>
+<div class="card" style="padding:24px 30px"><p class="t"><b class="g">추정되는 행동</b><br>AI가 지금 고른 동작</p></div>
+</div>
+</div>
+<aside>훈련이 끝나면 테스트 화면으로 바뀌어요. micro:bit를 찬 채로 점핑잭, 스쿼트, 가만히를 해 보며 확실성 막대가 올라가는지 확인해요. 화면은 공식 예제로 찍어서 행동 이름이 영어로 보여요. 인식 포인트(막대 아래 조절 손잡이)를 높이면 더 확실할 때만 판단하고, 낮추면 쉽게 판단해요. micro:bit가 연결되어 있어야 테스트할 수 있어요.</aside>
+</section>
+
+<!-- 21 퀴즈 -->
+<section id="quiz" class="b big">
+<div class="hd"><p class="kick">퀴즈 · 인식 포인트 80%</p><h2>AI는 무엇이라고 판단할까요?</h2></div>
+<div class="row" style="gap:40px">
+<div class="card f1" style="gap:20px"><h3>문제 1</h3>
+<div class="row c" style="gap:18px"><p class="t" style="width:150px">점핑잭</p><div class="bar f1"><b style="width:86%"></b><i style="left:80%"></i></div><p class="t" style="width:110px;text-align:right">86%</p></div>
+<div class="row c" style="gap:18px"><p class="t" style="width:150px">스쿼트</p><div class="bar f1"><b style="width:10%"></b><i style="left:80%"></i></div><p class="t" style="width:110px;text-align:right">10%</p></div>
+<div class="row c" style="gap:18px"><p class="t" style="width:150px">가만히</p><div class="bar f1"><b style="width:4%"></b><i style="left:80%"></i></div><p class="t" style="width:110px;text-align:right">4%</p></div>
+</div>
+<div class="card f1" style="gap:20px"><h3>문제 2</h3>
+<div class="row c" style="gap:18px"><p class="t" style="width:150px">점핑잭</p><div class="bar f1"><b style="width:46%"></b><i style="left:80%"></i></div><p class="t" style="width:110px;text-align:right">46%</p></div>
+<div class="row c" style="gap:18px"><p class="t" style="width:150px">스쿼트</p><div class="bar f1"><b style="width:50%"></b><i style="left:80%"></i></div><p class="t" style="width:110px;text-align:right">50%</p></div>
+<div class="row c" style="gap:18px"><p class="t" style="width:150px">가만히</p><div class="bar f1"><b style="width:4%"></b><i style="left:80%"></i></div><p class="t" style="width:110px;text-align:right">4%</p></div>
+</div>
+</div>
+<div class="hl">빨간 선(인식 포인트)을 넘은 막대가 있나요? 문제 2는 왜 헷갈렸을까요?</div>
+<aside>정답. 문제 1: 점핑잭 막대만 80%를 넘었으니 '점핑잭'으로 판단해요. 문제 2: 어떤 막대도 80%를 넘지 못해서 어느 동작으로도 판단하지 않아요(MakeCode에서는 '알 수 없음'). 점핑잭과 스쿼트가 비슷하게 나온 까닭을 물어보세요. 두 동작의 데이터가 비슷했거나, 데이터가 적었거나, 동작을 작게 했을 수 있어요. 이것이 다음 장 '모델 고치기'로 이어져요. 막대 숫자는 설명을 위한 예시예요.</aside>
+</section>
+
+<!-- 22 짝 바꿔 테스트 -->
+<section id="swap" class="big">
+<div class="hd"><p class="kick">짝 활동</p><h2>친구 손목에서도 잘 맞힐까요?</h2></div>
+<table style="font-size:40px">
+<tr><th style="width:28%;text-align:left">시험한 사람</th><th style="width:24%">점핑잭</th><th style="width:24%">스쿼트</th><th style="width:24%">가만히</th></tr>
+<tr><td>① 데이터를 모은 나</td><td style="text-align:center">○ △ ×</td><td style="text-align:center">○ △ ×</td><td style="text-align:center">○ △ ×</td></tr>
+<tr><td>② 우리 모둠 친구</td><td style="text-align:center">○ △ ×</td><td style="text-align:center">○ △ ×</td><td style="text-align:center">○ △ ×</td></tr>
+<tr><td>③ 다른 모둠 친구</td><td style="text-align:center">○ △ ×</td><td style="text-align:center">○ △ ×</td><td style="text-align:center">○ △ ×</td></tr>
+</table>
+<div class="row" style="gap:32px">
+<div class="card f1"><p class="t">잘 안 맞힌 사람이 있나요?<br><b>왜</b> 그럴까요?</p></div>
+<div class="card f1"><p class="t">모두에게 잘 맞게 하려면<br><b>무엇을</b> 하면 될까요?</p></div>
+</div>
+<aside>공식 안내의 질문 “micro:bit를 다른 사람이 착용하는 경우에도 잘 작동하나요?”를 활동으로 만들었어요. ○ 바로 맞힘, △ 가끔 맞힘, × 못 맞힘으로 표시해요. 보통 데이터를 모은 사람에게 가장 잘 맞아요. AI는 본 적 있는 예시와 비슷할 때 잘 맞히기 때문이에요. 해결책으로 '여러 친구의 데이터 더하기'가 나오면 칭찬해 주세요.</aside>
+</section>
+
+<!-- 23 모델 고치기 -->
+<section id="improve" class="dark">
+<div class="hd"><p class="kick">모델 고치기</p><h2>모으고, 훈련하고, 시험하고, 다시!</h2></div>
+<div class="row" style="gap:24px;justify-content:center;align-items:stretch">
+<div class="card" style="width:330px;align-items:center;text-align:center"><span class="n g">1</span><h3 style="color:#FFFFFF">데이터 고치기</h3><p class="ts">더 모으고, 이상한 것은 지워요</p></div>
+<div class="arr"></div>
+<div class="card" style="width:330px;align-items:center;text-align:center"><span class="n bl">2</span><h3 style="color:#FFFFFF">다시 훈련</h3><p class="ts">[모델 훈련]</p></div>
+<div class="arr"></div>
+<div class="card" style="width:330px;align-items:center;text-align:center"><span class="n">3</span><h3 style="color:#FFFFFF">다시 시험</h3><p class="ts">나와 친구 손목에서</p></div>
+<div class="arr"></div>
+<div class="card" style="width:330px;align-items:center;text-align:center"><span class="n" style="background:var(--gold);color:#3A2A00">4</span><h3 style="color:#FFFFFF">고칠 점 찾기</h3><p class="ts">어떤 동작이 헷갈렸나?</p></div>
+</div>
+<div class="row" style="gap:28px">
+<div class="card f1" style="padding:24px 30px"><p class="t" style="color:#FFFFFF">💡 친구 데이터를 더해요</p></div>
+<div class="card f1" style="padding:24px 30px"><p class="t" style="color:#FFFFFF">💡 가만히에 작은 움직임도</p></div>
+<div class="card f1" style="padding:24px 30px"><p class="t" style="color:#FFFFFF">💡 동작을 크고 또렷하게</p></div>
+</div>
+<aside>테스트 화면 왼쪽 위 [← 데이터 샘플 편집]을 누르면 데이터 화면으로 돌아가요. 공식 안내에서도 '반복적인 수행이 필요한 단계'라고 강조해요. 한 번에 완벽한 AI는 없어요. 고치고 다시 시험하는 반복 자체가 오늘 배울 중요한 과정이라고 이야기해 주세요.</aside>
+</section>
+
+<!-- 24 미션 체크 -->
+<section id="mission">
+<div class="hd"><p class="kick">미션 체크</p><h2>이렇게 되면 AI 완성!</h2></div>
+<div class="col" style="gap:22px">
+<div class="card step" style="flex-direction:row;padding:26px 36px"><span class="chk"></span><p class="tl">세 동작 모두 샘플이 <b>10개 이상</b> 있어요</p></div>
+<div class="card step" style="flex-direction:row;padding:26px 36px"><span class="chk"></span><p class="tl">점핑잭을 하면 <b>점핑잭</b> 막대가 인식 포인트를 넘어요</p></div>
+<div class="card step" style="flex-direction:row;padding:26px 36px"><span class="chk"></span><p class="tl">스쿼트를 하면 <b>스쿼트</b>, 가만히 있으면 <b>가만히</b>예요</p></div>
+<div class="card step" style="flex-direction:row;padding:26px 36px"><span class="chk"></span><p class="tl">친구가 차도 대부분 맞혀요</p></div>
+</div>
+<div class="gbox">모두 체크했다면 MakeCode로 출발! 아직이라면 앞 장으로 돌아가 한 번 더 고쳐요.</div>
+<aside>CreateAI 단계의 마무리 점검이에요. 네 번째 항목은 시간이 부족하면 생략해도 돼요. 시간이 오래 걸리는 모둠은 스쿼트를 빼고 점핑잭과 가만히 두 동작만으로 진행해도 괜찮아요(최소 2개 동작이면 학습할 수 있어요). 그 경우 뒤의 블록 코드에서 스쿼트 부분을 빼고 만들면 돼요.</aside>
+</section>
+
+<!-- 25 MakeCode로 -->
+<section id="tomakecode" class="b">
+<div class="hd"><p class="kick">4단계 · 블록 코딩</p><h2>[MakeCode에서 편집하기]</h2></div>
+<div class="row c" style="gap:44px">
+<img class="shot" src="img/makecode-from-createai.jpg" alt="CreateAI에서 연 MakeCode 화면. ML 시작 시, ML 중지 시 블록이 미리 만들어져 있고, 모델과 코드를 다운로드하라는 안내 창이 떠 있어요" style="width:960px;height:641px">
+<div class="col f1" style="gap:20px">
+<div class="step"><span class="n">1</span><p class="t">테스트 화면 오른쪽 아래<br><b>[MakeCode에서 편집하기]</b></p></div>
+<div class="step"><span class="n">2</span><p class="t">내 동작 이름이 들어간<br><b>블록</b>이 미리 생겨요</p></div>
+<div class="step"><span class="n">3</span><p class="t">AI를 고치고 싶으면<br>왼쪽 위 <b>&lt;</b> 버튼</p></div>
+</div>
+</div>
+<aside>CreateAI 안에서 MakeCode가 열려요. 화면은 공식 예제로 열어서 walking, jumping 같은 영어 이름이 보이지만, 우리 프로젝트에서는 점핑잭·스쿼트·가만히가 보여요. 미리 만들어진 블록은 지워도 괜찮아요. 오늘은 다음 장부터 함께 하나씩 만들어요. 모델을 고치려면 왼쪽 위 &lt; 버튼으로 CreateAI로 돌아가요.</aside>
+</section>
+
+<!-- 26 블록 꾸러미 -->
+<section id="palette">
+<div class="hd"><p class="kick">새 블록 꾸러미</p><h2>[기계 학습] 블록을 알아봐요</h2></div>
+<div class="row c" style="gap:56px">
+<img src="img/ml-blocks-palette.png" alt="기계 학습 블록 꾸러미: ML 시작 시, ML 중지 시, ML 중지 시 duration, ML 감지되었나요, 확실성 퍼센트" style="width:440px;height:759px;border-radius:24px">
+<div class="col f1" style="gap:18px">
+<div class="card" style="padding:22px 30px"><p class="t"><b class="bl">ML ○○ 시작 시</b><br>AI가 그 동작을 <b>시작했다</b>고 판단하면 실행</p></div>
+<div class="card" style="padding:22px 30px"><p class="t"><b class="bl">ML ○○ 중지 시</b><br>AI가 그 동작이 <b>끝났다</b>고 판단하면 실행</p></div>
+<div class="card" style="padding:22px 30px"><p class="t"><b class="bl">중지 시 <span style="color:var(--led-d)">duration</span></b><br>방금 끝난 동작을 <b>몇 ms</b> 했는지 알려 줘요</p></div>
+<div class="card" style="padding:22px 30px"><p class="t"><b class="bl">감지되었나요? · 확실성(%)</b><br>지금 그 동작인지, 얼마나 확신하는지</p></div>
+</div>
+</div>
+<aside>[기계 학습] 꾸러미는 CreateAI에서 열면 자동으로 추가돼요. 목록 맨 위 'micro:bit (V2)'는 V2에서만 쓸 수 있다는 뜻이에요. 오늘은 '시작 시'와 'duration이 있는 중지 시' 두 블록을 써요. ▼를 누르면 우리가 만든 동작 이름(점핑잭, 스쿼트, 가만히)과 '알 수 없음'을 고를 수 있어요. 지난 시간의 '흔들림 감지될 때'와 같은 이벤트 블록이라는 점을 연결해 주세요.</aside>
+</section>
+
+<!-- 27 1단계 코드 -->
+<section id="step1" class="b">
+<div class="hd"><p class="kick">코딩 1단계 · 동작 알아보기</p><h2>동작마다 다른 LED 그림을 보여 줘요</h2></div>
+<div class="codebox" style="height:560px"><img src="img/code-step1.png" alt="ML 점핑잭 시작 시 LED 출력(팔다리를 벌린 사람), ML 스쿼트 시작 시 LED 출력(앉은 사람), ML 가만히 시작 시 아이콘 출력(잠자는 얼굴)" style="width:1180px;height:510px"></div>
+<div class="row" style="gap:28px">
+<div class="card f1" style="padding:22px 30px"><p class="t"><b>[기계 학습]</b> ML ○○ 시작 시 × 3개</p></div>
+<div class="card f1" style="padding:22px 30px"><p class="t"><b>[기본]</b> LED 출력 · 아이콘 출력</p></div>
+</div>
+<aside>세 블록 모두 'ML ○○ 시작 시'예요. ▼로 동작을 바꿔요. 점핑잭과 스쿼트는 [기본]의 'LED 출력' 블록에 직접 그림을 그리고(01 차시 미션1과 같아요), 가만히는 '아이콘 출력'에서 잠자는 얼굴을 골랐어요. 그림은 자유롭게 바꿔도 좋아요. 학생들이 그린 그림이 곧 운동 코치의 표정이에요.</aside>
+</section>
+
+<!-- 28 시뮬레이터 -->
+<section id="sim">
+<div class="hd"><p class="kick">코딩 1단계 · 실행해서 확인</p><h2>시뮬레이터로 먼저 시험해요</h2></div>
+<div class="row c" style="gap:44px">
+<img class="shot" src="img/makecode-sim.jpg" alt="MakeCode 화면. 왼쪽 시뮬레이터 아래에 ML 이벤트 선택 상자가 있어요" style="width:960px;height:641px">
+<div class="col f1" style="gap:20px">
+<div class="card" style="padding:24px 30px"><p class="t">시뮬레이터 아래<br><b>ML 이벤트</b> 상자에서<br>동작을 골라요</p></div>
+<div class="card" style="padding:24px 30px"><p class="t">그 동작을 한 것처럼<br>코드가 실행돼요</p></div>
+<div class="hl">잘 되면 [다운로드]!<br>AI 모델과 코드가 함께 micro:bit로 들어가요</div>
+</div>
+</div>
+<aside>micro:bit가 없어도 시뮬레이터에서 ML 이벤트를 골라 코드를 확인할 수 있어요(unknown은 '알 수 없음'). 잘 되면 USB로 연결하고 [다운로드]를 눌러요. 다운로드 방법은 01 차시 미션1과 같아요. 다운로드가 끝나면 USB를 빼고 배터리 팩을 연결한 뒤 손목에 차고 진짜로 운동해 봐요.</aside>
+</section>
+
+<!-- 29 duration -->
+<section id="ms" class="dark">
+<div class="hd"><p class="kick">코딩 2단계 · 운동 시간 재기</p><h2>duration은 밀리초(ms)예요</h2></div>
+<div class="row c" style="gap:40px">
+<div class="card f1" style="align-items:center;text-align:center;padding:40px"><p style="font-family:'Jua',Arial,sans-serif;font-size:96px;color:var(--gold);line-height:1.1">1초</p><p class="tl" style="color:#FFFFFF">= 1000 밀리초(ms)</p></div>
+<div class="arr"></div>
+<div class="card f1" style="gap:16px;padding:40px">
+<p class="tl" style="color:#FFFFFF">5000 ms → <b style="color:var(--gold)">5</b>초</p>
+<p class="tl" style="color:#FFFFFF">12345 ms → 약 <b style="color:var(--gold)">?</b>초</p>
+</div>
+</div>
+<div class="row" style="gap:28px">
+<div class="card f1" style="padding:26px 32px"><p class="t" style="color:#FFFFFF">변수 2개를 만들어요<br><b style="color:#FF6B61">점핑잭시간 · 스쿼트시간</b></p></div>
+<div class="card f1" style="padding:26px 32px"><p class="t" style="color:#FFFFFF">보여 줄 때는<br><b style="color:#FF6B61">÷ 1000</b> 하고 <b style="color:#FF6B61">반올림</b></p></div>
+</div>
+<aside>'ML 중지 시' 블록의 duration에는 방금 끝난 동작을 한 시간이 밀리초 단위로 들어 있어요. 공식 예제도 1000으로 나누어 초로 보여 줘요. 퀴즈 답: 12345 ms는 약 12.3초, 반올림하면 12초예요. 변수는 [변수] 꾸러미의 '변수 만들기'로 만들어요(02 차시 횟수 변수와 같아요).</aside>
+</section>
+
+<!-- 30 2단계 코드 ① -->
+<section id="step2a">
+<div class="hd"><p class="kick">코딩 2단계 · 운동 시간 재기 ①</p><h2>동작이 끝나면 시간을 더해요</h2></div>
+<div class="row c" style="gap:44px">
+<div class="codebox" style="width:1000px;height:640px"><img src="img/code-step2-timer.png" alt="시작하면 점핑잭시간과 스쿼트시간에 0 저장하고 웃는 얼굴 출력. ML 점핑잭 중지 시 duration: 점핑잭시간 값 duration 증가. ML 스쿼트 중지 시 duration: 스쿼트시간 값 duration 증가" style="width:940px;height:563px"></div>
+<div class="col f1" style="gap:20px">
+<div class="step"><span class="n">1</span><p class="t">시작하면 두 변수를 <b>0</b>으로</p></div>
+<div class="step"><span class="n">2</span><p class="t">점핑잭이 끝나면<br><b>duration</b>만큼 더해요</p></div>
+<div class="step"><span class="n">3</span><p class="t">스쿼트도 똑같이</p></div>
+<div class="hl" style="font-size:30px">duration 동그라미를 끌어서<br>‘값 증가’ 칸에 넣어요</div>
+</div>
+</div>
+<aside>'ML ○○ 중지 시 duration' 블록을 쓰고, [변수]의 '○○ 값 1 증가' 블록에서 1 자리에 duration(빨간 동그라미)을 끌어다 넣어요. 동작이 끝날 때마다 그 동작을 한 시간이 차곡차곡 쌓여요. 공식 예제는 여기에 'LED 스크린 지우기'도 넣어요. 넣어도 되고 빼도 돼요.</aside>
+</section>
+
+<!-- 31 2단계 코드 ② -->
+<section id="step2b" class="b">
+<div class="hd"><p class="kick">코딩 2단계 · 운동 시간 재기 ②</p><h2>버튼으로 운동 시간을 확인해요</h2></div>
+<div class="codebox" style="height:600px"><img src="img/code-step2-buttons.png" alt="A 버튼을 누르면 반올림(점핑잭시간 / 1000) 숫자 출력, B 버튼을 누르면 반올림(스쿼트시간 / 1000) 숫자 출력, A+B 버튼을 누르면 두 변수에 0 저장하고 체크 아이콘 출력" style="width:1300px;height:564px"></div>
+<div class="row" style="gap:28px">
+<div class="card f1" style="padding:22px 30px"><p class="t"><b>A</b> 점핑잭 몇 초?</p></div>
+<div class="card f1" style="padding:22px 30px"><p class="t"><b>B</b> 스쿼트 몇 초?</p></div>
+<div class="card f1" style="padding:22px 30px"><p class="t"><b>A+B</b> 처음부터 다시</p></div>
+</div>
+<aside>01 차시 미션2(수를 내 맘대로)의 A, B, A+B 버튼과 같은 구조예요. '반올림'과 '/(나누기)' 블록은 [계산] 꾸러미에 있어요. 반올림 블록을 먼저 놓고, 그 안에 나누기 블록을, 다시 그 안에 변수를 넣어요. 블록이 겹겹이 들어가서 어려워하면 반올림 없이 '점핑잭시간 / 1000'만 넣어도 돼요(소수점까지 나와요).</aside>
+</section>
+
+<!-- 32 2단계 확인 -->
+<section id="step2test">
+<div class="hd"><p class="kick">코딩 2단계 · 실행해서 확인</p><h2>30초 동안 점핑잭! 몇 초가 나올까요?</h2></div>
+<div class="row" style="gap:40px">
+<div class="card f1" style="gap:18px">
+<div class="step"><span class="n">1</span><p class="t"><b>A+B</b>를 눌러 0으로</p></div>
+<div class="step"><span class="n">2</span><p class="t">친구가 재는 <b>30초</b> 동안 점핑잭</p></div>
+<div class="step"><span class="n">3</span><p class="t">멈추고 <b>가만히</b> 잠깐 기다리기</p></div>
+<div class="step"><span class="n">4</span><p class="t"><b>A</b>를 눌러 확인</p></div>
+</div>
+<table style="font-size:34px;flex:1">
+<tr><th>도전</th><th>실제 시간</th><th>micro:bit</th></tr>
+<tr><td style="text-align:center">1회</td><td style="text-align:center">30초</td><td style="text-align:center">____초</td></tr>
+<tr><td style="text-align:center">2회</td><td style="text-align:center">30초</td><td style="text-align:center">____초</td></tr>
+<tr><td style="text-align:center">3회</td><td style="text-align:center">30초</td><td style="text-align:center">____초</td></tr>
+</table>
+</div>
+<div class="hl">왜 3번에서 “가만히”를 해야 할까요? 힌트: 시간은 동작이 <u>끝날 때</u> 더해져요!</div>
+<aside>공식 예제의 평가 방법을 그대로 가져왔어요. 30에 가까운 숫자가 나오면 성공이에요. 시간은 'ML 중지 시'에 더해지므로, 점핑잭이 끝나고 다른 동작(가만히)으로 바뀌어야 비로소 더해져요. 바로 A를 누르면 0이나 작은 숫자가 나올 수 있어요. 숫자가 많이 다르면 모델을 고치거나(데이터 추가), 동작을 또렷하게 해 보게 하세요.</aside>
+</section>
+
+<!-- 33 3단계 코드 -->
+<section id="step3" class="b">
+<div class="hd"><p class="kick">코딩 3단계 · 코치 기능</p><h2>30초를 채우면 축하해요</h2></div>
+<div class="row c" style="gap:48px">
+<div class="codebox" style="width:960px;height:660px"><img src="img/code-step3-goal.png" alt="ML 점핑잭 중지 시 duration: 점핑잭시간 값 duration 증가, 만약 점핑잭시간 / 1000 ≥ 30 이면 하트 아이콘 출력, 행복함 소리 완료될 때까지 재생" style="width:900px;height:593px"></div>
+<div class="col f1" style="gap:20px">
+<div class="card" style="padding:24px 30px"><p class="t">앞에서 만든 <b>점핑잭 중지 시</b> 블록에 이어서 넣어요</p></div>
+<div class="card" style="padding:24px 30px"><p class="t"><b>[논리]</b> 만약 ~이면<br><b>[계산]</b> ≥ 비교</p></div>
+<div class="card" style="padding:24px 30px"><p class="t"><b>[음악]</b> 행복함 소리 재생</p></div>
+</div>
+</div>
+<aside>모은 점핑잭 시간이 30초 이상이면 하트와 소리로 축하해요. '≥'는 '크거나 같다'예요. 소리는 V2의 스피커로 나와요. 목표 시간은 모둠이 정해도 좋아요. 시간이 남는 모둠은 스쿼트 목표도 만들어 보게 하세요.</aside>
+</section>
+
+<!-- 34 완성 코드 -->
+<section id="full" style="padding:80px 96px;gap:28px">
+<div class="hd"><p class="kick">완성 코드</p><h2>AI 운동 코치 전체 블록</h2></div>
+<div class="codebox" style="height:700px;padding:20px"><img src="img/code-full.png" alt="AI 운동 코치 완성 블록 전체: 시작하면, A+B, A, B 버튼, ML 점핑잭·스쿼트·가만히 시작 시, ML 점핑잭 중지 시(목표 30초 축하 포함), ML 스쿼트 중지 시" style="width:1688px;height:628px"></div>
+<p class="ts">블록 9개 · 동작 알아보기 3 + 시간 재기 2 + 버튼 3 + 시작하면 1</p>
+<aside>오늘 만든 블록을 모두 모은 모습이에요. 블록 9개가 모두 있는지 학생들이 스스로 확인하게 하세요. 완성 작품은 MakeCode에서 다운로드하고, CreateAI의 [저장하기]로 데이터와 모델이 담긴 프로젝트 파일도 꼭 저장하게 해 주세요.</aside>
+</section>
+
+<!-- 35 안 될 때 -->
+<section id="trouble" class="big">
+<div class="hd"><p class="kick">문제 해결</p><h2>안 될 때 확인해요</h2></div>
+<div class="row" style="gap:28px">
+<div class="card f1"><h3 style="font-size:40px">동작을 잘 못 맞혀요</h3><p class="t">데이터 더 모으기,<br>차는 방향 확인하기</p></div>
+<div class="card f1"><h3 style="font-size:40px">시간이 0이에요</h3><p class="t">운동 뒤 <b>가만히</b> 했나요?<br>중지 시 블록 확인</p></div>
+<div class="card f1"><h3 style="font-size:40px">숫자가 너무 커요</h3><p class="t">÷ 1000을<br>넣었나요?</p></div>
+</div>
+<div class="row" style="gap:28px">
+<div class="card f1"><h3 style="font-size:40px">다운로드가 안 돼요</h3><p class="t">micro:bit가 V2인가요?<br>데이터용 USB 케이블?</p></div>
+<div class="card f1"><h3 style="font-size:40px">ML 블록이 없어요</h3><p class="t">CreateAI의 [MakeCode에서<br>편집하기]로 열었나요?</p></div>
+<div class="card f1"><h3 style="font-size:40px">소리가 안 나요</h3><p class="t">V2 스피커 확인,<br>목표 시간을 채웠나요?</p></div>
+</div>
+<aside>수업 중 자주 나오는 문제를 모았어요. 기계 학습 블록은 CreateAI에서 MakeCode로 넘어갈 때 자동으로 추가돼요. MakeCode 사이트에서 새 프로젝트를 따로 열면 이 블록이 없어요. 다운로드는 V2에서만 되고, 충전 전용 케이블로는 연결되지 않아요.</aside>
+</section>
+
+<!-- 36 운동 대회 -->
+<section id="contest" class="dark big">
+<div class="hd"><p class="kick">모둠 대항 챌린지</p><h2>1분 운동 대회</h2></div>
+<div class="row" style="gap:32px">
+<div class="card f1"><span class="n">1</span><h3 style="color:#FFFFFF">규칙</h3><p class="t" style="color:#E3E7EE">1분 동안 점핑잭과 스쿼트를<br>마음대로 섞어서 해요</p></div>
+<div class="card f1"><span class="n">2</span><h3 style="color:#FFFFFF">기록</h3><p class="t" style="color:#E3E7EE">A·B 버튼으로 시간을 확인하고<br>더한 값이 우리 모둠 점수</p></div>
+<div class="card f1"><span class="n">3</span><h3 style="color:#FFFFFF">심판</h3><p class="t" style="color:#E3E7EE">다른 모둠 친구가<br>시간을 재고 지켜봐요</p></div>
+</div>
+<div class="hl">AI 심판은 공정할까요? 어떤 친구에게 더 유리하거나 불리하지는 않을까요?</div>
+<aside>앞선 운동보조기구 차시의 질문 “모두 30초가 공정하게 적용되었나요?”를 이어받는 활동이에요. 대회가 끝나면 AI가 잘못 판단한 순간이 있었는지 물어보세요. 데이터를 모은 사람에게 유리했는지, 동작이 작은 친구는 손해를 보지 않았는지 이야기하면 다음 장 'AI와 공정성'으로 자연스럽게 이어져요.</aside>
+</section>
+
+<!-- 37 공정성 -->
+<section id="fair" class="big">
+<div class="hd"><p class="kick">AI와 공정성</p><h2>내 데이터로만 배운 AI는 누구에게 잘 맞을까요?</h2></div>
+<div class="row" style="gap:28px">
+<div class="card f1" style="align-items:center;text-align:center"><div class="led" data-p="10101 01110 00100 00100 01010" style="--w:150px;--p:14px"></div><h3>키가 큰 친구</h3><p class="t">팔이 길어서<br>움직임이 커요</p></div>
+<div class="card f1" style="align-items:center;text-align:center"><div class="led" data-p="00000 00000 01110 11111 01010" style="--w:150px;--p:14px"></div><h3>천천히 하는 친구</h3><p class="t">동작이 작고<br>느려요</p></div>
+<div class="card f1" style="align-items:center;text-align:center"><div class="led" data-p="01110 10001 10101 10001 01110" style="--w:150px;--p:14px"></div><h3>휠체어를 탄 친구</h3><p class="t">팔 운동만<br>할 수 있어요</p></div>
+</div>
+<div class="row" style="gap:28px">
+<div class="gbox f1">다양한 사람의 데이터를 모아요</div>
+<div class="gbox f1">모두 할 수 있는 동작도 넣어요</div>
+</div>
+<aside>AI는 본 적 있는 데이터와 비슷한 사람에게 잘 맞아요. 한 사람의 데이터로만 배우면 다른 사람에게는 불공정할 수 있어요. 휠체어를 탄 친구를 위해서는 '팔 들어 올리기'처럼 앉아서 할 수 있는 동작을 새로 가르칠 수 있다는 의견이 나오면 크게 칭찬해 주세요. AI를 만드는 사람이 '누가 쓸지'를 생각해야 한다는 점이 핵심이에요.</aside>
+</section>
+
+<!-- 38 스스로 해보기 -->
+<section id="challenge" class="b big">
+<div class="hd"><p class="kick">스스로 해보기</p><h2>AI 운동 코치를 더 똑똑하게!</h2></div>
+<div class="row" style="gap:28px">
+<div class="card f1" style="gap:16px"><div class="row c" style="justify-content:space-between"><p style="font-size:48px;color:var(--gold);line-height:1">★</p><div class="led" data-p="00100 01110 10100 00110 01001" style="--w:120px;--p:12px;--g:6px"></div></div><h3>새 운동 추가</h3><p class="t">제자리 달리기를 가르치고<br><b>터치 로고</b>로 시간 확인</p></div>
+<div class="card f1" style="gap:16px"><div class="row c" style="justify-content:space-between"><p style="font-size:48px;color:var(--gold);line-height:1">★★</p><div class="led" data-p="00110 00101 00100 11100 11100" style="--w:120px;--p:12px;--g:6px"></div></div><h3>소리 코치</h3><p class="t">동작이 바뀔 때마다<br><b>다른 소리</b>로 알려 주기</p></div>
+<div class="card f1" style="gap:16px"><div class="row c" style="justify-content:space-between"><p style="font-size:48px;color:var(--gold);line-height:1">★★★</p><div class="led" data-p="01110 10001 00110 00000 00100" style="--w:120px;--p:12px;--g:6px"></div></div><h3>AI 속이기 실험</h3><p class="t"><b>헷갈리는 데이터</b>를 넣으면<br>AI가 어떻게 될까?</p></div>
+</div>
+<div class="hl">AI를 속일 수 있는 방법을 찾으면, AI를 더 튼튼하게 만드는 방법도 보여요!</div>
+<aside>공식 프로젝트의 '확장하기' 아이디어를 수준별로 나눴어요. ★ 새 행동 데이터를 추가하고, [입력]의 '로고를 터치했을 때' 블록으로 새 변수를 보여 줘요(V2 기능). ★★ '시작 시' 블록마다 [음악] 소리 블록을 넣어요. ★★★ 일부러 다른 동작의 샘플을 섞어 넣고 다시 훈련해서 결과가 어떻게 바뀌는지 비교해요. 실험 뒤에는 꼭 원래 데이터로 되돌리게 해 주세요.</aside>
+</section>
+
+<!-- 39 SDGs -->
+<section id="sdgs">
+<div class="hd"><p class="kick">SDGs와 연결하기</p><h2>AI 운동 코치를 어디에 쓸 수 있을까요?</h2></div>
+<div class="row c" style="gap:40px">
+<div class="card" style="width:430px;align-items:center;text-align:center;background:#4C9F38;gap:12px">
+<p style="font-family:'Jua',Arial,sans-serif;font-size:120px;color:#FFFFFF;line-height:1">3</p>
+<p style="font-family:'Jua',Arial,sans-serif;font-size:44px;color:#FFFFFF">건강과 웰빙</p>
+<p class="t" style="color:#F0FFF0">모든 사람의<br>건강한 삶</p>
+</div>
+<div class="col f1" style="gap:20px">
+<div class="card" style="padding:24px 30px"><p class="t">🏃 <b>쉬는 시간 운동 습관</b> 만들기</p></div>
+<div class="card" style="padding:24px 30px"><p class="t">👵 할머니 할아버지의 <b>재활 운동 도우미</b></p></div>
+<div class="card" style="padding:24px 30px"><p class="t">📋 체육 시간 <b>운동 기록장</b></p></div>
+<div class="card" style="padding:24px 30px;border:4px dashed var(--green)"><p class="t">💡 우리 모둠 아이디어: ____________________</p></div>
+</div>
+</div>
+<aside>이 원고 시리즈의 목표인 'SDGs 실천 작품 만들기'와 연결하는 장이에요. 마지막 피지컬 컴퓨팅 프로젝트 차시에서 오늘 배운 AI를 문제 해결에 활용할 수 있다는 점을 알려 주세요. 예를 들어 안전한 가로등 아이디어에서 '위험한 몸짓'을 AI로 알아보게 할 수도 있어요.</aside>
+</section>
+
+<!-- 40 정리 -->
+<section id="wrap" class="dark" style="flex-direction:row;align-items:center;gap:72px">
+<div class="col f1" style="gap:36px">
+<p class="kick">오늘 배운 것</p>
+<h2 style="font-size:76px;line-height:1.25">AI는 <span style="color:var(--gold)">예시</span>로 배우고,<br>코드는 AI를 <span style="color:#FF6B61">쓸모 있게</span><br>만들어요</h2>
+<div class="row" style="gap:18px">
+<p class="chip" style="background:#2E3A2E;color:#7EE07E">① 데이터 모으기</p>
+<p class="chip" style="background:#253049;color:#8DB4FF">② 학습·테스트</p>
+<p class="chip" style="background:#3E2524;color:#FF8A82">③ 블록 코딩</p>
+</div>
+<div class="row" style="gap:24px">
+<div class="card f1" style="padding:24px 30px"><p class="t" style="color:#FFFFFF"><b style="color:var(--gold)">느낀 점</b> ____________</p></div>
+<div class="card f1" style="padding:24px 30px"><p class="t" style="color:#FFFFFF"><b style="color:var(--gold)">배운 점</b> ____________</p></div>
+</div>
+</div>
+<div class="mb" style="transform:scale(.8);transform-origin:right center;margin-left:-120px"><div class="mb-logo"></div><div class="mb-btn a"><span>A</span></div><div class="mb-btn b"><span>B</span></div><div class="led" data-p="01010 11111 11111 01110 00100"></div><div class="mb-pins"><i>0</i><i>1</i><i>2</i><i>3V</i><i>GND</i></div></div>
+<aside>마무리 질문: 오늘 AI는 무엇을 보고 배웠나요?(우리가 모은 데이터) 내가 모은 데이터가 AI의 실력에 어떤 영향을 주었나요? 오늘 만든 코드에서 AI가 한 일과 우리 블록이 한 일은 무엇인가요? 작품과 CreateAI 프로젝트 파일을 저장했는지 확인하고 마쳐요.</aside>
+</section>
+
+</div>
+<div id="notes"></div>
+<div id="bar"><button id="prev">◀ 이전</button><span id="count"></span><button id="next">다음 ▶</button><button id="nbtn">선생님 메모 (N)</button><button id="fbtn">전체 화면 (F)</button><a id="pdf" class="pdf" href="ai-coach.pdf" download="AI운동코치_원고.pdf">PDF 다운로드</a><button id="pbtn">인쇄 (P)</button></div>
+<script>
+document.querySelectorAll('.led[data-p]').forEach(el=>{const p=el.dataset.p.replace(/\s/g,'');el.innerHTML=[...p].map(c=>'<i'+(c==='1'?' class="on"':'')+'></i>').join('')});
+const stage=document.getElementById('stage'),S=[...stage.children],notes=document.getElementById('notes'),count=document.getElementById('count');
+let i=Math.max(0,Math.min(S.length-1,(parseInt(location.hash.slice(1))||1)-1));
+function fit(){const k=Math.min(innerWidth/1920,innerHeight/1080);stage.style.transform='translate(-50%,-50%) scale('+k+')'}
+function show(n){i=Math.max(0,Math.min(S.length-1,n));S.forEach((s,j)=>s.classList.toggle('on',j===i));const a=S[i].querySelector('aside');notes.textContent=a?a.textContent:'(메모 없음)';count.textContent=(i+1)+' / '+S.length;history.replaceState(null,'','#'+(i+1))}
+addEventListener('resize',fit);
+addEventListener('keydown',e=>{if(['ArrowRight','ArrowDown','PageDown',' ','Enter'].includes(e.key)){e.preventDefault();show(i+1)}else if(['ArrowLeft','ArrowUp','PageUp','Backspace'].includes(e.key)){e.preventDefault();show(i-1)}else if(e.key==='Home')show(0);else if(e.key==='End')show(S.length-1);else if(e.key==='n'||e.key==='N')document.body.classList.toggle('notes');else if(e.key==='f'||e.key==='F')toggleFs();else if(e.key==='p'||e.key==='P')window.print()});
+function toggleFs(){document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen().catch(()=>{})}
+stage.addEventListener('click',e=>{if(e.target.closest('a'))return;show(e.clientX<innerWidth/3?i-1:i+1)});
+document.getElementById('prev').onclick=()=>show(i-1);document.getElementById('next').onclick=()=>show(i+1);
+document.getElementById('nbtn').onclick=()=>document.body.classList.toggle('notes');document.getElementById('fbtn').onclick=toggleFs;
+document.getElementById('pbtn').onclick=()=>window.print();
+fit();show(i);
+</script>
+</body>
+</html>
